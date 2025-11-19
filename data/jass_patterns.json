@@ -1,0 +1,40 @@
+{
+  "ui_funcs": [
+    "DisplayTextToPlayer",
+    "DisplayTimedTextToPlayer",
+    "DisplayTextToForce",
+    "DisplayTimedTextToForce",
+    "BJDebugMsg",
+    "CreateTextTag",
+    "CreateTextTagUnitBJ",
+    "CreateTextTagLocBJ",
+    "TransmissionFromUnit",
+    "TransmissionFromUnitWithNameBJ",
+    "DialogSetMessage",
+    "DialogAddButton",
+    "TimerDialogSetTitle"
+  ],
+  "code_tokens": [
+    "GetHandleId", "GetTriggeringTrigger", "GetTriggerUnit", "GetEnumUnit",
+    "GetManipulatingUnit", "GetTriggerPlayer", "GetOwningPlayer",
+    "LoadReal", "LoadInteger", "LoadBoolean", "LoadStr", "LoadUnit",
+    "SaveReal", "SaveInteger", "SaveBoolean", "SaveStr",
+    "GetSpell", "GetAbility", "CreateUnit", "RemoveUnit", "KillUnit",
+    "function ", "endfunction", "local ", "set ", "call ",
+    "if ", "then", "endif", "elseif", "else",
+    "loop", "endloop", "exitwhen", "return",
+    "native ", "constant ", "array ", "takes ", "returns ",
+    "globals", "endglobals", "type ", "extends",
+    "integer ", "real ", "boolean ", "string ", "unit ",
+    "trigger ", "timer ", "location ", "group ", "player ",
+    "force ", "effect ", "sound ", "handle ",
+    "hashtable", "InitHashtable",
+    "udg_", "gg_", "Trig_", "Unit_",
+    "==", "!=", "<=", ">=", "and ", "or ", "not "
+  ],
+  "blacklisted_strings": [
+    "电影", "是否", "继续", "确定", "取消", "完成", "开始", "结束",
+    "丷幽祝", "绂侀蕘", "缂存睫", "瀹犵墿", "瀹濆疂"
+  ]
+}
+

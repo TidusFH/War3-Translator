@@ -307,15 +307,22 @@ class CampaignTranslator:
         # Ensure output directory exists
         os.makedirs(output_dir, exist_ok=True)
 
-        if self.verbose:
-            print(f"   Source MPQ: {os.path.abspath(mpq_path)}")
-            print(f"   Output dir: {os.path.abspath(output_dir)}")
-            print(f"   MPQ exists: {os.path.exists(mpq_path)}")
-            print(f"   Output dir exists: {os.path.exists(output_dir)}")
+        # Convert to absolute paths for mpqcli
+        abs_mpq_path = os.path.abspath(mpq_path)
+        abs_output_dir = os.path.abspath(output_dir)
+        abs_listfile = os.path.abspath(self.listfile_path) if os.path.exists(self.listfile_path) else None
 
-        args = ['extract', mpq_path, '-o', output_dir]
-        if os.path.exists(self.listfile_path):
-            args.extend(['-f', self.listfile_path])
+        if self.verbose:
+            print(f"   Source MPQ: {abs_mpq_path}")
+            print(f"   Output dir: {abs_output_dir}")
+            print(f"   MPQ exists: {os.path.exists(abs_mpq_path)}")
+            print(f"   Output dir exists: {os.path.exists(abs_output_dir)}")
+            if abs_listfile:
+                print(f"   Listfile: {abs_listfile}")
+
+        args = ['extract', abs_mpq_path, '-o', abs_output_dir]
+        if abs_listfile:
+            args.extend(['-f', abs_listfile])
 
         success, output = self.run_mpqcli(args)
         if not success:
@@ -324,30 +331,51 @@ class CampaignTranslator:
             if output:
                 for line in output.splitlines():
                     print(f"   → {line}")
+            return False
+
+        # Verify extraction actually produced files
+        if self.verbose:
+            extracted_files = list(Path(abs_output_dir).rglob('*'))
+            file_count = len([f for f in extracted_files if f.is_file()])
+            print(f"   ✅ Extracted {file_count} files")
+            if file_count == 0:
+                print("   ⚠️ WARNING: No files were extracted!")
+            elif file_count <= 10:
+                for f in [f for f in extracted_files if f.is_file()]:
+                    print(f"      - {f.relative_to(abs_output_dir)}")
+
         return success
 
     def create_mpq(self, source_dir: str, mpq_path: str) -> bool:
         """Create MPQ archive."""
+        # Convert to absolute paths for mpqcli
+        abs_source_dir = os.path.abspath(source_dir)
+        abs_mpq_path = os.path.abspath(mpq_path)
+        abs_listfile = os.path.abspath(self.listfile_path) if os.path.exists(self.listfile_path) else None
+
         # Ensure the parent directory of the target MPQ exists
-        mpq_path_obj = Path(mpq_path)
-        if mpq_path_obj.parent != Path('.'):
-            mpq_path_obj.parent.mkdir(parents=True, exist_ok=True)
+        mpq_path_obj = Path(abs_mpq_path)
+        mpq_path_obj.parent.mkdir(parents=True, exist_ok=True)
 
         if self.verbose:
-            print(f"   Source dir: {os.path.abspath(source_dir)}")
-            print(f"   Target MPQ: {os.path.abspath(mpq_path)}")
-            print(f"   Source exists: {os.path.exists(source_dir)}")
+            print(f"   Source dir: {abs_source_dir}")
+            print(f"   Target MPQ: {abs_mpq_path}")
+            print(f"   Source exists: {os.path.exists(abs_source_dir)}")
             print(f"   Parent dir exists: {mpq_path_obj.parent.exists()}")
-            if os.path.exists(source_dir):
-                files = list(Path(source_dir).rglob('*'))
+            if abs_listfile:
+                print(f"   Listfile: {abs_listfile}")
+            if os.path.exists(abs_source_dir):
+                files = [f for f in Path(abs_source_dir).rglob('*') if f.is_file()]
                 print(f"   Files in source: {len(files)}")
-                if len(files) <= 10:
+                if len(files) == 0:
+                    print("   ⚠️ WARNING: Source directory is empty!")
+                elif len(files) <= 10:
                     for f in files:
-                        print(f"      - {f.relative_to(source_dir)}")
+                        print(f"      - {f.relative_to(abs_source_dir)}")
 
-        args = ['create', mpq_path, source_dir]
-        if os.path.exists(self.listfile_path):
-            args.extend(['-f', self.listfile_path])
+        args = ['create', abs_mpq_path, abs_source_dir]
+        if abs_listfile:
+            args.extend(['-f', abs_listfile])
 
         success, output = self.run_mpqcli(args)
         if not success:

@@ -24,6 +24,14 @@ except ImportError:
     STRING_EXTRACTOR_AVAILABLE = False
     print(" ⚠️ Warning: stringextractor.py not found - system identifier features disabled")
 
+# Import the campaign translator module
+try:
+    import campaign_translator as ct
+    CAMPAIGN_TRANSLATOR_AVAILABLE = True
+except ImportError:
+    CAMPAIGN_TRANSLATOR_AVAILABLE = False
+    print(" ⚠️ Warning: campaign_translator.py not found - campaign mode disabled")
+
 # --- Configuration ---
 UI_FUNCS = [
     b'DisplayTextToPlayer', b'DisplayTimedTextToPlayer',
@@ -1920,12 +1928,17 @@ def main():
     print("=" * 70)
     print(" Warcraft III Map Translation Tool v8.0 - Dependency Support")
     print("=" * 70)
-    
+
     if STRING_EXTRACTOR_AVAILABLE:
         print(" ✓ stringextractor.py loaded - Mode 3 & 4 available")
     else:
         print(" ⚠️ stringextractor.py not found - Mode 3 & 4 disabled")
-    
+
+    if CAMPAIGN_TRANSLATOR_AVAILABLE:
+        print(" ✓ campaign_translator.py loaded - Mode 5 (Campaign) available")
+    else:
+        print(" ⚠️ campaign_translator.py not found - Mode 5 disabled")
+
     print()
     
     while True:
@@ -1935,12 +1948,14 @@ def main():
         if STRING_EXTRACTOR_AVAILABLE:
             print(" 3) sync      - Synchronized translation (translates identifiers)")
             print(" 4) depsync   - Dependency-aware synchronized translation")
-        print(" 5) quit      - Exit")
+        if CAMPAIGN_TRANSLATOR_AVAILABLE:
+            print(" 5) campaign  - Campaign translation with Google Translate (.w3n)")
+        print(" 6) quit      - Exit")
         print()
-        
-        mode = input("Select mode (1-5): ").strip().lower()
-        
-        if mode in ('5', 'quit', 'exit', 'q'):
+
+        mode = input("Select mode (1-6): ").strip().lower()
+
+        if mode in ('6', 'quit', 'exit', 'q'):
             print("👋 Goodbye!")
             break
         
@@ -2052,7 +2067,14 @@ def main():
             print(f" ✓ Created/verified directory: {output_dir}")
             
             mode4_synchronized_dependency_translation(j_file, txt_files, tokens_dir, output_dir)
-        
+
+        elif mode in ('5', 'campaign'):
+            if not CAMPAIGN_TRANSLATOR_AVAILABLE:
+                print("❌ Mode 5 requires campaign_translator.py")
+                continue
+
+            ct.campaign_translation_mode()
+
         else:
             print("❌ Invalid mode.")
 

@@ -57,12 +57,18 @@ LANGUAGE_CODES = {
 class CampaignTranslator:
     """Handles translation of Warcraft III campaign files."""
 
-    def __init__(self, mpqcli_path: str = "mpqcli.exe", listfile_path: str = "Listfilesbasico.txt"):
+    def __init__(self, mpqcli_path: str = "mpqcli.exe", listfile_path: str = "Listfilesbasico.txt", verbose: bool = True):
         """
         Initialize the campaign translator.
+
+        Args:
+            mpqcli_path: Path to mpqcli.exe
+            listfile_path: Path to listfile for MPQ operations
+            verbose: Enable verbose debugging output
         """
         self.mpqcli_path = mpqcli_path
         self.listfile_path = listfile_path
+        self.verbose = verbose
         self.config = self._load_config()
         self.engine = 'google'
         if self.config and self.config.has_section('General'):
@@ -74,7 +80,7 @@ class CampaignTranslator:
             self.engine = os.getenv("TRANSLATE_ENGINE").strip().lower()
         self.google_translator = None
         self.llm_translator = None
-        
+
         self._init_translators()
 
         # Ensure required directories exist
@@ -84,6 +90,8 @@ class CampaignTranslator:
 
         for directory in [self.backup_dir, self.protected_dir, self.translated_dir]:
             directory.mkdir(exist_ok=True)
+            if self.verbose:
+                print(f"📁 Directory ensured: {directory.absolute()}")
 
     def _load_config(self) -> configparser.ConfigParser:
         """Load configuration from config.ini."""
@@ -257,6 +265,12 @@ class CampaignTranslator:
             return False, message
 
         cmd = [self.mpqcli_path] + args
+
+        if self.verbose:
+            # Show command for debugging
+            cmd_str = ' '.join(f'"{arg}"' if ' ' in arg else arg for arg in cmd)
+            print(f"🔧 Running: {cmd_str}")
+
         try:
             result = subprocess.run(
                 cmd,
@@ -265,6 +279,12 @@ class CampaignTranslator:
                 timeout=300
             )
             output = (result.stdout or "") + (result.stderr or "")
+
+            if self.verbose:
+                print(f"   Return code: {result.returncode}")
+                if output.strip():
+                    print(f"   Output: {output.strip()}")
+
             return result.returncode == 0, output.strip()
         except FileNotFoundError:
             message = f"mpqcli.exe could not be executed (FileNotFoundError). Tried command: {' '.join(cmd)}"
@@ -277,14 +297,26 @@ class CampaignTranslator:
         except Exception as e:
             message = f"Unexpected error running mpqcli: {e}"
             print(f"❌ {message}")
+            import traceback
+            if self.verbose:
+                traceback.print_exc()
             return False, message
 
     def extract_mpq(self, mpq_path: str, output_dir: str) -> bool:
         """Extract MPQ archive."""
+        # Ensure output directory exists
         os.makedirs(output_dir, exist_ok=True)
+
+        if self.verbose:
+            print(f"   Source MPQ: {os.path.abspath(mpq_path)}")
+            print(f"   Output dir: {os.path.abspath(output_dir)}")
+            print(f"   MPQ exists: {os.path.exists(mpq_path)}")
+            print(f"   Output dir exists: {os.path.exists(output_dir)}")
+
         args = ['extract', mpq_path, '-o', output_dir]
         if os.path.exists(self.listfile_path):
             args.extend(['-f', self.listfile_path])
+
         success, output = self.run_mpqcli(args)
         if not success:
             print("❌ MPQ extraction failed.")
@@ -296,9 +328,27 @@ class CampaignTranslator:
 
     def create_mpq(self, source_dir: str, mpq_path: str) -> bool:
         """Create MPQ archive."""
+        # Ensure the parent directory of the target MPQ exists
+        mpq_path_obj = Path(mpq_path)
+        if mpq_path_obj.parent != Path('.'):
+            mpq_path_obj.parent.mkdir(parents=True, exist_ok=True)
+
+        if self.verbose:
+            print(f"   Source dir: {os.path.abspath(source_dir)}")
+            print(f"   Target MPQ: {os.path.abspath(mpq_path)}")
+            print(f"   Source exists: {os.path.exists(source_dir)}")
+            print(f"   Parent dir exists: {mpq_path_obj.parent.exists()}")
+            if os.path.exists(source_dir):
+                files = list(Path(source_dir).rglob('*'))
+                print(f"   Files in source: {len(files)}")
+                if len(files) <= 10:
+                    for f in files:
+                        print(f"      - {f.relative_to(source_dir)}")
+
         args = ['create', mpq_path, source_dir]
         if os.path.exists(self.listfile_path):
             args.extend(['-f', self.listfile_path])
+
         success, output = self.run_mpqcli(args)
         if not success:
             print("❌ MPQ creation failed.")
@@ -306,6 +356,9 @@ class CampaignTranslator:
             if output:
                 for line in output.splitlines():
                     print(f"   → {line}")
+        else:
+            if self.verbose and os.path.exists(mpq_path):
+                print(f"   ✅ MPQ created successfully: {os.path.getsize(mpq_path)} bytes")
         return success
 
     def translate_campaign(self, campaign_path: str, src_lang: str, dest_lang: str):

@@ -1,0 +1,27 @@
+# War3 Translator Configuration File
+# Copy this file to 'config.ini' and add your settings
+
+[GoogleTranslate]
+# Option 1: Use Official Google Cloud Translation API with API Key
+# Get your API key from: https://console.cloud.google.com/apis/credentials
+# Uncomment and add your API key below:
+# api_key = YOUR_API_KEY_HERE
+
+# Option 2: Use Service Account JSON file (Recommended for production)
+# Download your credentials JSON from Google Cloud Console
+# Uncomment and specify the path to your credentials file:
+# credentials_path = path/to/your-service-account-key.json
+
+# Note: If both are empty, the tool will use the free googletrans library
+# which doesn't require an API key but has lower rate limits.
+
+[LLM]
+# OpenAI / OpenRouter Configuration
+# Use this for higher quality translations (context-aware)
+# api_key = sk-or-v1-...
+# base_url = https://openrouter.ai/api/v1  (Optional, defaults to OpenAI)
+# model = google/gemini-2.0-flash-exp:free  (Or gpt-4o, claude-3-opus, etc.)
+
+[General]
+# Preferred translation engine: 'google' or 'llm'
+engine = google

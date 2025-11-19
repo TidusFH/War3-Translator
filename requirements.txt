@@ -1,0 +1,12 @@
+# Required dependencies
+chardet>=5.0.0
+ftfy>=6.0.0
+
+# Translation APIs
+googletrans==4.0.0rc1
+google-cloud-translate>=3.0.0
+
+# LLM Support
+openai>=1.0.0
+python-dotenv>=1.0.0
+tqdm>=4.66.0  # For progress bars

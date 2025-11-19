@@ -62,6 +62,44 @@ Or install individually:
 pip install chardet ftfy googletrans==4.0.0rc1
 ```
 
+### Google Translate API Setup
+
+The tool supports **two translation methods**:
+
+#### 🆓 Option 1: Free Google Translate (DEFAULT - No API Key)
+
+**No setup needed!** The free version works immediately after installing dependencies.
+
+- ✅ Completely free
+- ✅ No Google account needed
+- ⚠️ Lower rate limits (may be slow for large campaigns)
+
+#### 🔑 Option 2: Official Google Cloud API (Recommended for Large Projects)
+
+Better performance and reliability, but requires setup:
+
+1. **Get a Google Cloud API key** - See [GOOGLE_API_SETUP.md](GOOGLE_API_SETUP.md) for detailed instructions
+2. **Install the official library:**
+   ```bash
+   pip install google-cloud-translate
+   ```
+3. **Configure your API key:**
+   ```bash
+   copy config.ini.template config.ini
+   ```
+   Then edit `config.ini` and add your API key:
+   ```ini
+   [GoogleTranslate]
+   api_key = YOUR_API_KEY_HERE
+   ```
+
+**Benefits:**
+- ✅ Higher rate limits (1000+ translations/min)
+- ✅ More reliable
+- ✅ Free tier: 500,000 chars/month ($0 for most campaigns)
+
+**For complete setup instructions, see [GOOGLE_API_SETUP.md](GOOGLE_API_SETUP.md)**
+
 ## Usage
 
 ### Method 1: Run from Main Tool

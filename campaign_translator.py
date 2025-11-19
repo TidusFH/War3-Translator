@@ -12,13 +12,28 @@ import time
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime
+import configparser
 
+# Try to import free googletrans (no API key needed)
 try:
-    from googletrans import Translator, LANGUAGES
-    GOOGLE_TRANSLATE_AVAILABLE = True
+    from googletrans import Translator as FreeTranslator
+    FREE_TRANSLATE_AVAILABLE = True
 except ImportError:
-    GOOGLE_TRANSLATE_AVAILABLE = False
-    print("⚠️ Warning: googletrans not installed. Run: pip install googletrans==4.0.0rc1")
+    FREE_TRANSLATE_AVAILABLE = False
+
+# Try to import official Google Cloud Translation API (API key needed)
+try:
+    from google.cloud import translate_v2 as translate
+    CLOUD_TRANSLATE_AVAILABLE = True
+except ImportError:
+    CLOUD_TRANSLATE_AVAILABLE = False
+
+GOOGLE_TRANSLATE_AVAILABLE = FREE_TRANSLATE_AVAILABLE or CLOUD_TRANSLATE_AVAILABLE
+
+if not GOOGLE_TRANSLATE_AVAILABLE:
+    print("⚠️ Warning: No translation library installed.")
+    print("   Option 1 (Free): pip install googletrans==4.0.0rc1")
+    print("   Option 2 (Official): pip install google-cloud-translate")
 
 # Language code mapping
 LANGUAGE_CODES = {
@@ -34,17 +49,43 @@ LANGUAGE_CODES = {
 class CampaignTranslator:
     """Handles translation of Warcraft III campaign files using Google Translate API."""
 
-    def __init__(self, mpqcli_path: str = "mpqcli.exe", listfile_path: str = "Listfilesbasico.txt"):
+    def __init__(self, mpqcli_path: str = "mpqcli.exe", listfile_path: str = "Listfilesbasico.txt",
+                 api_key: str = None):
         """
         Initialize the campaign translator.
 
         Args:
             mpqcli_path: Path to mpqcli.exe executable
             listfile_path: Path to the listfile for MPQ extraction
+            api_key: Google Cloud API key (optional, for official API)
         """
         self.mpqcli_path = mpqcli_path
         self.listfile_path = listfile_path
-        self.translator = Translator() if GOOGLE_TRANSLATE_AVAILABLE else None
+        self.api_key = api_key or self._load_api_key()
+        self.use_cloud_api = False
+        self.translator = None
+
+        # Initialize translator
+        if self.api_key and CLOUD_TRANSLATE_AVAILABLE:
+            # Use official Google Cloud Translation API
+            try:
+                os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = self.api_key
+                self.translator = translate.Client()
+                self.use_cloud_api = True
+                print("✓ Using Google Cloud Translation API (Official)")
+            except Exception as e:
+                print(f"⚠️ Failed to initialize Cloud API: {e}")
+                print("   Falling back to free translator...")
+                if FREE_TRANSLATE_AVAILABLE:
+                    self.translator = FreeTranslator()
+                    self.use_cloud_api = False
+        elif FREE_TRANSLATE_AVAILABLE:
+            # Use free googletrans
+            self.translator = FreeTranslator()
+            self.use_cloud_api = False
+            print("✓ Using free Google Translate (no API key)")
+        else:
+            print("❌ No translation service available")
 
         # Ensure required directories exist
         self.backup_dir = Path("backup")
@@ -53,6 +94,36 @@ class CampaignTranslator:
 
         for directory in [self.backup_dir, self.protected_dir, self.translated_dir]:
             directory.mkdir(exist_ok=True)
+
+    def _load_api_key(self) -> Optional[str]:
+        """
+        Load API key from config.ini file.
+
+        Returns:
+            API key string or None
+        """
+        config_file = Path("config.ini")
+        if not config_file.exists():
+            return None
+
+        try:
+            config = configparser.ConfigParser()
+            config.read(config_file)
+
+            if 'GoogleTranslate' in config and 'api_key' in config['GoogleTranslate']:
+                api_key = config['GoogleTranslate']['api_key'].strip()
+                if api_key and api_key != 'YOUR_API_KEY_HERE':
+                    return api_key
+
+            if 'GoogleTranslate' in config and 'credentials_path' in config['GoogleTranslate']:
+                cred_path = config['GoogleTranslate']['credentials_path'].strip()
+                if cred_path and os.path.exists(cred_path):
+                    return cred_path
+
+        except Exception as e:
+            print(f"⚠️ Error reading config.ini: {e}")
+
+        return None
 
     def translate_text(self, text: str, src_lang: str, dest_lang: str, max_retries: int = 3) -> str:
         """
@@ -76,8 +147,18 @@ class CampaignTranslator:
 
         for attempt in range(max_retries):
             try:
-                result = self.translator.translate(text, src=src_lang, dest=dest_lang)
-                return result.text
+                if self.use_cloud_api:
+                    # Official Google Cloud API
+                    result = self.translator.translate(
+                        text,
+                        source_language=src_lang,
+                        target_language=dest_lang
+                    )
+                    return result['translatedText']
+                else:
+                    # Free googletrans
+                    result = self.translator.translate(text, src=src_lang, dest=dest_lang)
+                    return result.text
             except Exception as e:
                 if attempt < max_retries - 1:
                     wait_time = 2 ** attempt  # Exponential backoff

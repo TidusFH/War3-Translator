@@ -1,3 +1,16 @@
+# Required dependencies
 chardet>=5.0.0
 ftfy>=6.0.0
+
+# Translation API - Choose ONE of the following:
+
+# Option 1: Free Google Translate (no API key needed, lower rate limits)
 googletrans==4.0.0rc1
+
+# Option 2: Official Google Cloud Translation API (API key required, higher rate limits)
+# Uncomment the line below to use the official API:
+# google-cloud-translate>=3.0.0
+
+# Note: You can have both installed. The tool will automatically use the
+# official API if you provide an API key in config.ini, otherwise it will
+# use the free version.

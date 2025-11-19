@@ -47,7 +47,24 @@ pip install -r requirements.txt
 **Required packages:**
 - `chardet` - Character encoding detection
 - `ftfy` - Unicode text fixing
-- `googletrans==4.0.0rc1` - Google Translate API (for campaign mode)
+- `googletrans==4.0.0rc1` - Google Translate API (free version, for campaign mode)
+
+**Optional (for better performance):**
+- `google-cloud-translate` - Official Google Cloud API (requires API key)
+
+### 2b. Google Translate API Setup (Optional)
+
+The campaign translator works with **two options**:
+
+**🆓 Free Version (Default):** No setup needed, works immediately!
+
+**🔑 Official Google Cloud API (Optional):** Better performance for large campaigns
+- See [GOOGLE_API_SETUP.md](GOOGLE_API_SETUP.md) for complete setup guide
+- Quick start:
+  1. Get API key from Google Cloud Console
+  2. `pip install google-cloud-translate`
+  3. `copy config.ini.template config.ini`
+  4. Add your API key to `config.ini`
 
 ### 3. Verify Files
 
